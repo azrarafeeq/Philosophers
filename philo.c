@@ -6,7 +6,7 @@
 /*   By: arafeeq <arafeeq@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/23 12:40:03 by arafeeq           #+#    #+#             */
-/*   Updated: 2023/02/23 19:34:11 by arafeeq          ###   ########.fr       */
+/*   Updated: 2023/02/23 19:38:49 by arafeeq          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,6 +57,7 @@ int	main(int argc, char **argv)
 		printf("ID of philo = %i\n", philo->id);
 		printf("philo last_ate = %i\n", philo->last_ate);
 		printf("philo left_fork = %i\n", philo->left_fork);
+		printf("id of next philo = %i\n", philo->next->id);
 		printf("id of next philo = %i\n", philo->next->id);
 		//printf("philo right_fork = %i\n", *(philo->right_fork));
 		philo = philo->next;
