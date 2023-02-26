@@ -1,0 +1,11 @@
+dinner->forks[dinner->philos[i].right_fork] = 42;
+dinner->forks[dinner->philos[i].left_fork] = 20;
+while (i < dinner->amt_of_philo)
+{
+	printf("----------------------------------------------------\n");
+	printf("ID of philo = %i\n", dinner->philos[i].id);
+	printf("philo last_ate = %i\n", dinner->philos[i].last_ate);
+	printf("philo value in right_fork = %i\n", dinner->forks[dinner->philos[i].right_fork]);
+	printf("philo value in left_fork = %i\n", dinner->forks[dinner->philos[i].left_fork]);
+	i++;
+}

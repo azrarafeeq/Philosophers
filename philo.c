@@ -6,7 +6,7 @@
 /*   By: arafeeq <arafeeq@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/23 12:40:03 by arafeeq           #+#    #+#             */
-/*   Updated: 2023/02/23 19:38:49 by arafeeq          ###   ########.fr       */
+/*   Updated: 2023/02/26 18:58:12 by arafeeq          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,56 +25,46 @@ int	initial_parse(int argc, char **argv)
 	return (0);
 }
 
-void	*routine(void *arg)
+void	philo_thread_create(t_main *dinner)
 {
-	t_philo			*philo;
+	int		i;
 
-	philo = (t_philo *)arg;
-	eating(philo);
-	//sleeping(philo);
-	return (NULL);
+	i = 0;
+	while (i < dinner->amt_of_philo)
+	{
+		pthread_create(&(dinner->philos[i].philo),
+			NULL, &routine, &(dinner->philos[i]));
+		usleep(200);
+		i++;
+	}
 }
 
 int	main(int argc, char **argv)
 {
-	t_main	dinner;
-	t_philo	*philo;
-	t_philo	*temp;
+	t_main	*dinner;
+	int		j;
 
-	philo = NULL;
+	dinner = malloc(sizeof(t_main));
 	if (initial_parse(argc, argv))
 		return (1);
-	init_dinner(&dinner, argc, argv);
-	philo_list(&philo, &dinner);
-	temp = philo;
-	/* printf("id of temp = %i\n", temp->id);
-	printf("id of temp->next = %i\n", temp->next->id);
-	printf("id of temp->next->next = %i\n", temp->next->next->id); */
-	philo->main->routine_start = get_current_time();
-	while (philo->next != temp)
+	init_dinner(dinner, argc, argv);
+	init_philo(dinner);
+	philo_thread_create(dinner);
+	printf("DOES IT COME BACK IN THE MAIN\n");
+	checker(dinner, argc);
+	j = 0;
+	while (j < dinner->amt_of_philo)
 	{
-		printf("----------------------------------------------------\n");
-		printf("ID of philo = %i\n", philo->id);
-		printf("philo last_ate = %i\n", philo->last_ate);
-		printf("philo left_fork = %i\n", philo->left_fork);
-		printf("id of next philo = %i\n", philo->next->id);
-		printf("id of next philo = %i\n", philo->next->id);
-		//printf("philo right_fork = %i\n", *(philo->right_fork));
-		philo = philo->next;
+		pthread_join(dinner->philos[j].philo, NULL);
+		j++;
 	}
-	printf("----------------------------------------------------\n");
-	printf("ID of philo = %i\n", philo->id);
-	printf("philo last_ate = %i\n", philo->last_ate);
-	printf("philo left_fork = %i\n", philo->left_fork);
-	printf("id of next philo = %i\n", philo->next->id);
-	//printf("philo right_fork = %i\n", *(philo->right_fork));
-	/* while (philo->next != temp && dinner.amt_of_philo != 1)
-	{
-		if (pthread_create(&(philo->philo), NULL, routine, philo) != 0)
-			return (printf("Couldn't create thread %i\n", philo->id));
-		usleep(200);
-		philo = philo->next;
-	}
-	if (pthread_create(&(philo->philo), NULL, routine, philo) != 0)
-		return (printf("Couldn't create thread %i\n", philo->id)); */
+	free(dinner);
 }
+
+//1. have to put conditions for one philo
+//2. have to put condition for the amount of time a philo can eat - for 0 also
+//3. have to check how to communicate between routine while loop and 
+// checker while loop if a philo died or nbr to eat is reached
+
+//two philos cannot communicate with each other but the main can communicate
+//with other philosophers

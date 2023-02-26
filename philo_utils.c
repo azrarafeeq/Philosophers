@@ -6,7 +6,7 @@
 /*   By: arafeeq <arafeeq@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/11 15:28:01 by arafeeq           #+#    #+#             */
-/*   Updated: 2023/02/23 15:47:35 by arafeeq          ###   ########.fr       */
+/*   Updated: 2023/02/25 22:04:59 by arafeeq          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,51 +50,19 @@ int	ft_atoi(const char *str)
 	return (num * ve);
 }
 
-int	number_length(int n)
+useconds_t	get_current_time(void)
 {
-	int	intlen;
+	useconds_t		millie_seconds;
+	struct timeval	time;
 
-	intlen = 1;
-	n = n / 10;
-	while (n)
-	{
-		n = n / 10;
-		intlen++;
-	}
-	return (intlen);
+	gettimeofday(&time, NULL);
+	millie_seconds = (time.tv_sec * 1000) + (time.tv_usec / 1000);
+	return (millie_seconds);
 }
 
-char	*number_conversion(int num, char *str, int len)
+void	millie_sleep(useconds_t routine_time, t_philo *philo)
 {
-	while (num)
-	{
-		str[--len] = (num % 10) + '0';
-		num = num / 10;
-	}
-	return (str);
-}
-
-char	*ft_itoa(int n)
-{
-	char				*str;
-	int					len;
-	unsigned int		num;
-
-	num = n;
-	len = number_length(n);
-	if (n < 0)
-	{
-		len++;
-		num = n * -1;
-	}
-	str = (char *)malloc (sizeof(char) * len + 1);
-	if (!str)
-		return (NULL);
-	str[len] = '\0';
-	str[--len] = (num % 10) + '0';
-	num = num / 10;
-	number_conversion(num, str, len);
-	if (n < 0)
-		str[0] = '-';
-	return (str);
+	philo->current_time = get_current_time();
+	while (get_current_time() < (routine_time + philo->current_time))
+		usleep(50);
 }
