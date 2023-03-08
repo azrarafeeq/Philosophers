@@ -1,16 +1,38 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   philo_utils.c                                      :+:      :+:    :+:   */
+/*   utils.c                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: arafeeq <arafeeq@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2023/02/11 15:28:01 by arafeeq           #+#    #+#             */
-/*   Updated: 2023/02/25 22:04:59 by arafeeq          ###   ########.fr       */
+/*   Created: 2023/03/07 14:54:38 by arafeeq           #+#    #+#             */
+/*   Updated: 2023/03/07 15:48:44 by arafeeq          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
+
+int	not_digit(int argc, char **argv)
+{
+	int	i;
+	int	j;
+
+	i = 1;
+	j = 0;
+	while (argc != 1)
+	{
+		while (argv[i][j])
+		{
+			if (argv[i][j] <= '0' && argv[i][j] >= '9')
+				return (1);
+			j++;
+		}
+		j = 0;
+		i++;
+		argc--;
+	}
+	return (0);
+}
 
 void	ws_and_sign_check(const char *str, int *i, int *ve)
 {
@@ -50,19 +72,31 @@ int	ft_atoi(const char *str)
 	return (num * ve);
 }
 
-useconds_t	get_current_time(void)
+void	ft_putstr(char *str)
 {
-	useconds_t		millie_seconds;
-	struct timeval	time;
+	int	i;
 
-	gettimeofday(&time, NULL);
-	millie_seconds = (time.tv_sec * 1000) + (time.tv_usec / 1000);
-	return (millie_seconds);
+	i = 0;
+	while (str[i])
+	{
+		write(1, &str[i], 1);
+		i++;
+	}
 }
 
-void	millie_sleep(useconds_t routine_time, t_philo *philo)
+void	ft_putnbr(int n)
 {
-	philo->current_time = get_current_time();
-	while (get_current_time() < (routine_time + philo->current_time))
-		usleep(50);
+	if (n == 2147483647)
+	{
+		write(1, "2147483647", 10);
+		return ;
+	}
+	if (n < 0)
+	{
+		write(1, "-", 1);
+		n = n * -1;
+	}
+	if (n >= 10)
+		ft_putnbr(n / 10);
+	ft_putchar(n % 10 + 48);
 }

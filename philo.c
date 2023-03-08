@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   philo.c                                            :+:      :+:    :+:   */
+/*   ph.c                                            :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: arafeeq <arafeeq@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/23 12:40:03 by arafeeq           #+#    #+#             */
-/*   Updated: 2023/02/26 18:58:12 by arafeeq          ###   ########.fr       */
+/*   Updated: 2023/03/05 18:07:27 by arafeeq          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,55 +16,93 @@ int	initial_parse(int argc, char **argv)
 {
 	if (argc != 5 && argc != 6)
 	{
-		printf("Number of arguments not equal to 5 or 6\n");
+		ft_putstr("\033[0;31mError : Invalid number of arguments\n\033[0m");
 		return (1);
 	}
-	else if (ft_atoi(argv[1]) <= 0 || ft_atoi(argv[2]) <= 0
-		|| ft_atoi(argv[3]) <= 0 || ft_atoi(argv[4]) <= 0)
+	if (not_digit(argc, argv) || ft_atoi(argv[1]) <= 0 || ft_atoi(argv[2]) < 60
+		|| ft_atoi(argv[3]) < 60 || ft_atoi(argv[4]) < 60)
+	{
+		ft_putstr("\033[0;31mError : Invalid argument\n\033[0m");
 		return (1);
+	}
+	if (ft_atoi(argv[1]) > 200)
+	{
+		ft_putstr("\033[0;31mError : Philosophers more than 200\n\033[0m");
+		return (1);
+	}
+	if (argc == 6)
+	{
+		if (ft_atoi(argv[5]) <= 0)
+		{
+			ft_putstr("\033[0;31mError : Philosophers can't eat\n\033[0m");
+			return (1);
+		}
+	}
 	return (0);
 }
 
-void	philo_thread_create(t_main *dinner)
+void	print_message(t_ph *ph, int flag, char *str)
 {
-	int		i;
+	unsigned int	time;
 
-	i = 0;
-	while (i < dinner->amt_of_philo)
+	time = get_current_time() - ph->m->routine_start;
+	pthread_mutex_lock(&(ph->m->finish_mutex));
+	if (ph->m->routine_end != 1)
 	{
-		pthread_create(&(dinner->philos[i].philo),
-			NULL, &routine, &(dinner->philos[i]));
-		usleep(200);
-		i++;
+		pthread_mutex_unlock(&(ph->m->finish_mutex));
+		ft_putstr(RESET);
+		if (flag == 1)
+			ft_putstr(BLUE);
+		else if (flag == 2)
+			ft_putstr(GREEN);
+		else if (flag == 3)
+			ft_putstr(YELLOW);
+		ft_putnbr(time);
+		ft_putstr(" philo ");
+		ft_putnbr(ph->id);
+		ft_putstr(str);
+	}
+	else
+		pthread_mutex_unlock(&(ph->m->finish_mutex));
+}
+
+void	print_death(t_m **din, int i, unsigned int time)
+{
+	pthread_mutex_lock(&((*din)->finish_mutex));
+	(*din)->routine_end = 1;
+	pthread_mutex_unlock(&((*din)->finish_mutex));
+	pthread_mutex_lock(&((*din)->print_mutex));
+	printf(RED);
+	printf("%u philo %i died\033[0m\n", time, (*din)->m_p[i].id);
+	pthread_mutex_unlock(&(*din)->print_mutex);
+}
+
+void	millie_sleep(unsigned int routine_time, t_ph *ph)
+{
+	unsigned int	current_time;
+	int				i;
+
+	current_time = get_current_time();
+	pthread_mutex_lock(&(ph->m->finish_mutex));
+	i = ph->m->routine_end;
+	pthread_mutex_unlock(&(ph->m->finish_mutex));
+	while (i == 0)
+	{
+		if (get_current_time() >= (routine_time + current_time))
+			return ;
+		usleep(250);
 	}
 }
 
 int	main(int argc, char **argv)
 {
-	t_main	*dinner;
-	int		j;
+	t_m	dinner;
 
-	dinner = malloc(sizeof(t_main));
 	if (initial_parse(argc, argv))
 		return (1);
-	init_dinner(dinner, argc, argv);
-	init_philo(dinner);
-	philo_thread_create(dinner);
-	printf("DOES IT COME BACK IN THE MAIN\n");
-	checker(dinner, argc);
-	j = 0;
-	while (j < dinner->amt_of_philo)
-	{
-		pthread_join(dinner->philos[j].philo, NULL);
-		j++;
-	}
-	free(dinner);
+	init_dinner(&dinner, argc, argv);
+	init_ph(&dinner);
+	ph_thread_create(&dinner);
+	main_checker(&dinner, argc);
+	return (0);
 }
-
-//1. have to put conditions for one philo
-//2. have to put condition for the amount of time a philo can eat - for 0 also
-//3. have to check how to communicate between routine while loop and 
-// checker while loop if a philo died or nbr to eat is reached
-
-//two philos cannot communicate with each other but the main can communicate
-//with other philosophers

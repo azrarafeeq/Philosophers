@@ -6,7 +6,7 @@
 /*   By: arafeeq <arafeeq@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/23 12:39:56 by arafeeq           #+#    #+#             */
-/*   Updated: 2023/02/26 17:43:24 by arafeeq          ###   ########.fr       */
+/*   Updated: 2023/03/07 15:16:53 by arafeeq          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,52 +25,64 @@
 # define BLUE "\033[0;34m"
 # define RESET "\033[0m"
 
-typedef struct s_philo
+typedef struct s_ph
 {
-	pthread_t		philo;
+	pthread_t		ph;
 	int				id;
-	unsigned int	eat_start;
 	unsigned int	last_ate;
 	unsigned int	current_time;
 	int				right_fork;
 	int				left_fork;
+	int				sl;
+	int				sr;
 	int				times_eaten;
-	pthread_mutex_t	left_mutex;
-	pthread_mutex_t	right_mutex;
-	struct s_main	*main;
-}				t_philo;
+	struct sm		*m;
+}				t_ph;
 
-typedef struct s_main{
-	int				amt_of_philo;
+typedef struct sm{
+	int				amt_of_ph;
 	int				forks[200];
-	t_philo			philos[200];
+	int				sign[200];
+	t_ph			m_p[200];
 	unsigned int	time_to_die;
 	unsigned int	time_to_eat;
 	unsigned int	time_to_sleep;
-	pthread_mutex_t	mutex_fork[200];
+	pthread_mutex_t	mutex[200];
+	pthread_mutex_t	sm[200];
 	pthread_mutex_t	print_mutex;
-	pthread_mutex_t	time_mutex;
 	pthread_mutex_t	finish_mutex;
-	useconds_t		routine_start;
+	pthread_mutex_t	times_eaten_mutex;
+	pthread_mutex_t	last_ate_mutex;
+	unsigned int	routine_start;
 	int				routine_end;
+	int				argc;
 	int				amt_to_eat;
-	//extra mutexes
-}				t_main;
+}				t_m;
 
-void		init_dinner(t_main *dinner, int argc, char **argv);
-void		init_philo(t_main *dinner);
-int			forks_available(t_philo *philo);
+void			init_dinner(t_m *dinner, int argc, char **argv);
+void			init_ph(t_m *dinner);
+void			ph_thread_create(t_m *dinner);
+int				forks_available(t_ph *ph);
 
-int			ft_atoi(const char *str);
-void		ws_and_sign_check(const char *str, int *i, int *ve);
+int				not_digit(int argc, char **argv);
+int				ft_atoi(const char *str);
+void			ws_and_sign_check(const char *str, int *i, int *ve);
 
-useconds_t	get_current_time(void);
-void		*routine(void *arg);
-int			eating(t_philo *philo);
-void		sleeping(t_philo *philo);
-void		thinking(t_philo *philo);
-void		millie_sleep(useconds_t routine_time, t_philo *philo);
+void			*routine(void *arg);
+void			eating(t_ph *ph);
+void			sleeping(t_ph *ph);
+void			thinking(t_ph *ph);
+void			millie_sleep(unsigned int routine_time, t_ph *ph);
 
-void		checker(t_main *dinner, int argc);
+void			print_message(t_ph *ph, int flag, char *str);
+void			print_death(t_m **din, int i, unsigned int time);
+void			ft_putchar(char c);
+void			ft_putstr(char *str);
+void			ft_putnbr(int n);
+
+int				ph_starvation(t_m *dinner);
+void			main_checker(t_m *dinner, int argc);
+
+unsigned int	get_current_time(void);
 
 #endif

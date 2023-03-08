@@ -6,113 +6,115 @@
 /*   By: arafeeq <arafeeq@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/23 15:04:38 by arafeeq           #+#    #+#             */
-/*   Updated: 2023/02/26 18:40:52 by arafeeq          ###   ########.fr       */
+/*   Updated: 2023/03/08 13:39:58 by arafeeq          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "philo.h"
 
-int	forks_available(t_philo *philo)
+int	forks_available(t_ph *ph)
 {
-	pthread_mutex_lock(&(philo->right_mutex));
-	pthread_mutex_lock(&(philo->left_mutex));
-	if (philo->main->amt_of_philo != 1)
+	pthread_mutex_lock(&(ph->m->mutex[ph->right_fork]));
+	if (ph->m->forks[ph->right_fork] == 0)
 	{
-		if (philo->main->forks[philo->right_fork] == 0
-			&& philo->main->forks[philo->left_fork] == 0)
+		pthread_mutex_unlock(&(ph->m->mutex[ph->right_fork]));
+		pthread_mutex_lock(&(ph->m->mutex[ph->left_fork]));
+		if (ph->m->forks[ph->left_fork] == 0)
 		{
-			philo->main->forks[philo->right_fork] = 1;
-			philo->main->forks[philo->left_fork] = 1;
-			pthread_mutex_unlock(&(philo->right_mutex));
-			pthread_mutex_unlock(&(philo->left_mutex));
+			pthread_mutex_unlock(&(ph->m->mutex[ph->left_fork]));
 			return (1);
 		}
+		else
+			pthread_mutex_unlock(&(ph->m->mutex[ph->left_fork]));
 	}
-	pthread_mutex_unlock(&(philo->right_mutex));
-	pthread_mutex_unlock(&(philo->left_mutex));
+	else
+		pthread_mutex_unlock(&(ph->m->mutex[ph->right_fork]));
 	return (0);
 }
 
-int	eating(t_philo *philo)
+int	not_signed(t_ph *ph)
 {
-	philo->eat_start = get_current_time() - philo->main->routine_start;
-	if (philo->eat_start - philo->last_ate >= philo->main->time_to_die)
+	pthread_mutex_lock(&(ph->m->sm[ph->sr]));
+	if (ph->m->sign[ph->sr] != ph->id)
 	{
-		pthread_mutex_lock(&(philo->main->finish_mutex));
-		philo->main->routine_end = 1;
-		pthread_mutex_unlock(&(philo->main->finish_mutex));
-		pthread_mutex_lock(&(philo->main->print_mutex));
-		printf(RED);
-		printf("%u philo %i died\n", philo->eat_start, philo->id);
-		printf(RESET);
-		pthread_mutex_unlock(&(philo->main->print_mutex));
-		return (1);
+		pthread_mutex_unlock(&(ph->m->sm[ph->sr]));
+		pthread_mutex_lock(&(ph->m->sm[ph->sl]));
+		if (ph->m->sign[ph->sl] != ph->id)
+		{
+			pthread_mutex_unlock(&(ph->m->sm[ph->sl]));
+			return (1);
+		}
+		else
+			pthread_mutex_unlock(&(ph->m->sm[ph->sl]));
 	}
-	pthread_mutex_lock(&(philo->main->print_mutex));
-	printf("%u philo %i has taken right fork\n", philo->eat_start, philo->id);
-	printf("%u philo %i has taken left fork\n", philo->eat_start, philo->id);
-	printf(GREEN);
-	printf("%u philo %i is eating\n", philo->eat_start, philo->id);
-	printf(RESET);
-	pthread_mutex_unlock(&(philo->main->print_mutex));
-	millie_sleep(philo->main->time_to_eat, philo);
-	philo->times_eaten++;
-	philo->last_ate = get_current_time() - philo->main->routine_start;
-	pthread_mutex_lock(&(philo->right_mutex));
-	pthread_mutex_lock(&(philo->left_mutex));
-	philo->main->forks[philo->right_fork] = 0;
-	philo->main->forks[philo->left_fork] = 0;
-	pthread_mutex_unlock(&(philo->right_mutex));
-	pthread_mutex_unlock(&(philo->left_mutex));
+	else
+		pthread_mutex_unlock(&(ph->m->sm[ph->sr]));
 	return (0);
 }
 
-void	sleeping(t_philo *philo)
+void	eating(t_ph *ph)
 {
-	useconds_t	sleep_time;
-
-	pthread_mutex_lock(&(philo->main->time_mutex));
-	sleep_time = get_current_time() - philo->main->routine_start;
-	pthread_mutex_unlock(&(philo->main->time_mutex));
-	pthread_mutex_lock(&(philo->main->print_mutex));
-	printf(YELLOW);
-	printf("%u philo %i is sleeping\n", sleep_time, philo->id);
-	printf(RESET);
-	pthread_mutex_unlock(&(philo->main->print_mutex));
-	millie_sleep(philo->main->time_to_sleep, philo);
+	pthread_mutex_lock(&(ph->m->last_ate_mutex));
+	ph->last_ate = get_current_time() - ph->m->routine_start;
+	pthread_mutex_unlock(&(ph->m->last_ate_mutex));
+	pthread_mutex_lock(&(ph->m->mutex[ph->right_fork]));
+	ph->m->forks[ph->right_fork] = 1;
+	pthread_mutex_unlock(&(ph->m->mutex[ph->right_fork]));
+	pthread_mutex_lock(&(ph->m->mutex[ph->left_fork]));
+	ph->m->forks[ph->left_fork] = 1;
+	pthread_mutex_unlock(&(ph->m->mutex[ph->left_fork]));
+	pthread_mutex_lock(&(ph->m->sm[ph->sr]));
+	ph->m->sign[ph->sr] = ph->id;
+	pthread_mutex_unlock(&(ph->m->sm[ph->sr]));
+	pthread_mutex_lock(&(ph->m->sm[ph->sl]));
+	ph->m->sign[ph->sl] = ph->id;
+	pthread_mutex_unlock(&(ph->m->sm[ph->sl]));
+	millie_sleep(ph->m->time_to_eat, ph);
+	pthread_mutex_lock(&(ph->m->mutex[ph->right_fork]));
+	ph->m->forks[ph->right_fork] = 0;
+	pthread_mutex_unlock(&(ph->m->mutex[ph->right_fork]));
+	pthread_mutex_lock(&(ph->m->mutex[ph->left_fork]));
+	ph->m->forks[ph->left_fork] = 0;
+	pthread_mutex_unlock(&(ph->m->mutex[ph->left_fork]));
 }
 
-void	thinking(t_philo *philo)
+void	sleeping(t_ph *ph)
 {
-	useconds_t	think_time;
-
-	pthread_mutex_lock(&(philo->main->time_mutex));
-	think_time = get_current_time() - philo->main->routine_start;
-	pthread_mutex_unlock(&(philo->main->time_mutex));
-	pthread_mutex_lock(&(philo->main->print_mutex));
-	printf(BLUE);
-	printf("%u philo %i is thinking\n", think_time, philo->id);
-	printf(RESET);
-	pthread_mutex_unlock(&(philo->main->print_mutex));
+	pthread_mutex_lock(&(ph->m->print_mutex));
+	print_message(ph, 3, " is sleeping\033[0m\n");
+	pthread_mutex_unlock(&(ph->m->print_mutex));
+	millie_sleep(ph->m->time_to_sleep, ph);
+	pthread_mutex_lock(&(ph->m->print_mutex));
+	print_message(ph, 1, " is thinking\033[0m\n");
+	pthread_mutex_unlock(&(ph->m->print_mutex));
 }
 
 void	*routine(void *arg)
 {
-	t_philo			*philo;
+	t_ph			*ph;
 
-	philo = (t_philo *)arg;
-	while (1 && philo->main->routine_end != 1 && philo->main->amt_to_eat != 0)
+	ph = (t_ph *)arg;
+	while (1)
 	{
-		if (forks_available(philo) && philo->main->routine_end != 1)
+		pthread_mutex_lock(&(ph->m->finish_mutex));
+		if (ph->m->routine_end == 1)
 		{
-			if (eating(philo))
-				return (NULL);
-			if (philo->main->routine_end != 1)
-				sleeping(philo);
-			if (philo->main->routine_end != 1)
-				thinking(philo);
+			pthread_mutex_unlock(&(ph->m->finish_mutex));
+			return (NULL);
 		}
-		usleep(100);
+		pthread_mutex_unlock(&(ph->m->finish_mutex));
+		if (ph->m->amt_of_ph > 1 && forks_available(ph) && not_signed(ph))
+		{
+			pthread_mutex_lock(&(ph->m->print_mutex));
+			print_message(ph, 0, " has taken the right fork\033[0m\n");
+			print_message(ph, 0, " has taken the left fork\033[0m\n");
+			print_message(ph, 2, " is eating\033[0m\n");
+			pthread_mutex_unlock(&(ph->m->print_mutex));
+			eating(ph);
+			pthread_mutex_lock(&(ph->m->times_eaten_mutex));
+			ph->times_eaten++;
+			pthread_mutex_unlock(&(ph->m->times_eaten_mutex));
+			sleeping(ph);
+		}
 	}
-	return (NULL);
 }
